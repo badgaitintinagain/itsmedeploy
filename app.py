@@ -1,10 +1,15 @@
 import joblib
 import pandas as pd
 import streamlit as st
+import os
 
 # Load model and encoders
-model = joblib.load('randforest.joblib')
-label_encoders = joblib.load('label_encoders.joblib')
+try:
+    model = joblib.load('randforest.joblib')
+    label_encoders = joblib.load('label_encoders.joblib')
+except Exception as e:
+    st.error(f"Error loading model or encoders: {e}")
+    st.stop()
 
 # Access each encoder
 le_wind_gust_dir = label_encoders['WindGustDir']
@@ -71,17 +76,14 @@ if submit_button:
         'RainToday': [rain_today]
     })
 
-
     # Transform categorical features
     def safe_transform(encoder, column):
         try:
             return encoder.transform(input_data[column])
         except ValueError:
-            st.write(
-                f"Warning: The value '{input_data[column].values[0]}' for column '{column}' was not seen during training.")
+            st.warning(f"Warning: The value '{input_data[column].values[0]}' for column '{column}' was not seen during training.")
             # Fallback to a default value if unseen
             return encoder.transform([encoder.classes_[0]])
-
 
     input_data['WindGustDir'] = safe_transform(le_wind_gust_dir, 'WindGustDir')
     input_data['WindDir9am'] = safe_transform(le_wind_dir_9am, 'WindDir9am')
@@ -93,9 +95,17 @@ if submit_button:
         prediction = model.predict(input_data)
         if prediction[0] == 1:  # Assuming 1 means 'Yes' and 0 means 'No'
             st.success("พรุ่งนี้จะมีฝน")
-            st.image('picture/sad.jpg', caption='Sad! ☔', use_column_width=True)
+            image_path = 'picture/sad.jpg'
+            if os.path.isfile(image_path):
+                st.image(image_path, caption='Sad! ☔', use_column_width=True)
+            else:
+                st.warning("Image for 'Rain' not found.")
         else:
             st.success("พรุ่งนี้จะไม่มีฝน")
-            st.image('picture/yay.jpg', caption='Yay! 🌤️', use_column_width=True)
+            image_path = 'picture/yay.jpg'
+            if os.path.isfile(image_path):
+                st.image(image_path, caption='Yay! 🌤️', use_column_width=True)
+            else:
+                st.warning("Image for 'No Rain' not found.")
     except Exception as e:
         st.error(f"เกิดข้อผิดพลาดในการทำนาย: {e}")
