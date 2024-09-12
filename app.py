@@ -4,18 +4,28 @@ import streamlit as st
 import os
 
 # Load model and encoders
-try:
-    model = joblib.load('randforest.joblib')
-    label_encoders = joblib.load('label_encoders.joblib')
-except Exception as e:
-    st.error(f"Error loading model or encoders: {e}")
-    st.stop()
+model_path = 'randforest.joblib'
+encoders_path = 'label_encoders.joblib'
+
+def load_object(path):
+    try:
+        return joblib.load(path)
+    except Exception as e:
+        st.error(f"Error loading file '{path}': {e}")
+        st.stop()
+
+model = load_object(model_path)
+label_encoders = load_object(encoders_path)
 
 # Access each encoder
-le_wind_gust_dir = label_encoders['WindGustDir']
-le_wind_dir_9am = label_encoders['WindDir9am']
-le_wind_dir_3pm = label_encoders['WindDir3pm']
-le_rain_today = label_encoders['RainToday']
+try:
+    le_wind_gust_dir = label_encoders['WindGustDir']
+    le_wind_dir_9am = label_encoders['WindDir9am']
+    le_wind_dir_3pm = label_encoders['WindDir3pm']
+    le_rain_today = label_encoders['RainToday']
+except KeyError as e:
+    st.error(f"Missing encoder in label encoders: {e}")
+    st.stop()
 
 # App title and description
 st.title('พยากรณ์สภาพอากาศ')
